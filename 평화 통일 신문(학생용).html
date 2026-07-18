@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>평화 일보 - 학생용 신문 기고 데스크</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f5f3eb; /* 따뜻하고 부드러운 종이 질감 미색 */
+            color: #2c2c2c;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .serif-title {
+            font-family: 'Noto Serif KR', serif;
+        }
+        .newspaper-border {
+            border-top: 4px double #1a1a1a;
+            border-bottom: 4px double #1a1a1a;
+        }
+        .newspaper-grid {
+            background-image: radial-gradient(#dbd7cb 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        /* 스마트폰 가독성 향상 및 텍스트 넘침 방지 */
+        input, textarea, select {
+            font-size: 16px !important; 
+        }
+        /* 모바일 한글 자연스러운 개행 및 글자 잘림 완전 차단 */
+        p, div, span, h1, h2, h3, h4, td {
+            word-break: break-all; 
+            overflow-wrap: break-word; 
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+
+    <!-- 최상단 헤더 -->
+    <header class="bg-stone-950 text-white shadow-lg sticky top-0 z-40 px-4 py-4 sm:px-6">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <span class="bg-red-600 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded">중등 도덕</span>
+                <h1 class="serif-title text-base sm:text-lg md:text-xl font-bold tracking-wider">🕊️ 한반도 평화·통일 로드맵 빌더</h1>
+            </div>
+            <span class="text-xs text-stone-400 font-medium"><i class="fa-solid fa-user-pen"></i> 학생용 화면</span>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-6">
+        
+        <!-- API 설정 패널 (수업 시 유연성을 위해 폴더형 유지) -->
+        <div class="bg-white border border-stone-300 rounded-xl shadow-sm p-4">
+            <details class="group">
+                <summary class="flex justify-between items-center font-bold cursor-pointer list-none text-stone-700">
+                    <span class="text-xs sm:text-sm"><i class="fa-solid fa-gears mr-2 text-stone-500"></i> 선생님 설정: 스프레드시트 API 연동 주소</span>
+                    <span class="transition group-open:rotate-180">
+                        <svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="20"><path d="M19 9l-7 7-7-7"></path></svg>
+                    </span>
+                </summary>
+                <div class="mt-4 pt-4 border-t border-stone-200 space-y-3 text-xs sm:text-sm">
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="url" id="api-url" class="flex-grow px-3 py-3 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-600 font-mono text-xs" value="https://script.google.com/macros/s/AKfycbwvLG7pjUfnqR9NEcsl_c0JsO-68qdES5AauIrmEFpEdOKzF4gmcWMR23gZXZohHaYq/exec">
+                        <button onclick="saveApiUrl()" class="bg-stone-800 hover:bg-stone-700 text-white font-bold px-6 py-3 rounded-lg text-sm transition shrink-0">API 주소 적용</button>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <!-- 왼쪽: 작성용 입력 폼 -->
+            <section class="lg:col-span-5 bg-white border border-stone-300 rounded-2xl shadow-sm p-5 sm:p-6 space-y-6">
+                <div class="border-b border-stone-200 pb-4">
+                    <h2 class="serif-title text-xl sm:text-2xl font-bold text-stone-800 flex items-center gap-2">
+                        <i class="fa-solid fa-pen-nib text-stone-700"></i> 평화 일보 기사 기고문 작성
+                    </h2>
+                    <p class="text-xs sm:text-sm text-stone-500 mt-1.5 leading-relaxed">배운 내용과 도덕적 가치(평화, 정의, 인권)를 담아 정성껏 입력하여 나만의 신문을 발행해 보세요.</p>
+                </div>
+
+                <form id="student-form" onsubmit="submitArticle(event)" class="space-y-6">
+                    <!-- 최근 제출 기사 복원 배너 -->
+                    <div id="restore-banner" class="hidden bg-stone-100 border border-stone-300 p-4 rounded-xl flex items-center justify-between gap-3 text-xs text-stone-800 shadow-sm transition-all">
+                        <span class="flex items-center gap-2 font-medium leading-relaxed">
+                            <i class="fa-solid fa-clock-rotate-left text-stone-600 text-sm"></i> 
+                            이전에 제출하고 발행하신 기사가 보관되어 있습니다.
+                        </span>
+                        <button type="button" onclick="loadLastSubmission()" class="bg-stone-900 hover:bg-stone-800 text-white font-bold px-3 py-2 rounded-lg shrink-0 transition text-xs shadow-sm">
+                            내용 복원
+                        </button>
+                    </div>
+
+                    <!-- 학번/이름 -->
+                    <div>
+                        <label for="student-code" class="block text-sm font-bold text-stone-800 mb-2">
+                            <i class="fa-solid fa-id-card mr-1 text-stone-500"></i> 학번 및 이름 (예: 30101 홍길동)
+                        </label>
+                        <input type="text" id="student-code" required oninput="updateLivePreview()"
+                            class="w-full px-4 py-3.5 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-600 font-medium text-base shadow-sm"
+                            placeholder="예: 30101 김평화">
+                    </div>
+
+                    <!-- 1. 분단의 문제점 -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label for="division-issue" class="block text-sm font-bold text-stone-800">
+                                <i class="fa-solid fa-triangle-exclamation mr-1 text-red-600"></i> 1. 분단의 문제점
+                            </label>
+                            <span class="text-xs text-stone-400 font-mono bg-stone-100 px-2 py-1 rounded" id="issue-counter">0/150자</span>
+                        </div>
+                        <textarea id="division-issue" required maxlength="150" rows="3" oninput="updateLivePreview()"
+                            class="w-full px-4 py-3.5 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-600 text-sm sm:text-base leading-relaxed shadow-sm bg-stone-50/30"
+                            placeholder="분단으로 인해 발생하는 인도적 불행, 경제적 손실, 대립 불안 등을 구체적인 예시와 함께 서술해 주세요."></textarea>
+                    </div>
+
+                    <!-- 2. 통일의 필요성 -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label for="unification-need" class="block text-sm font-bold text-stone-800">
+                                <i class="fa-solid fa-scale-balanced mr-1 text-amber-600"></i> 2. 통일의 필요성
+                            </label>
+                            <span class="text-xs text-stone-400 font-mono bg-stone-100 px-2 py-1 rounded" id="need-counter">0/150자</span>
+                        </div>
+                        <textarea id="unification-need" required maxlength="150" rows="3" oninput="updateLivePreview()"
+                            class="w-full px-4 py-3.5 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-600 text-sm sm:text-base leading-relaxed shadow-sm bg-stone-50/30"
+                            placeholder="단순히 경제적 손익을 떠나 생명존중, 이산가족 고통 치유, 정의 등 도덕적 가치 측면에서 마땅히 통일해야 하는 이유를 기술해 주세요."></textarea>
+                    </div>
+
+                    <!-- 3. 통일 방안 -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label for="unification-plan" class="block text-sm font-bold text-stone-800">
+                                <i class="fa-solid fa-route mr-1 text-emerald-600"></i> 3. 한반도 평화·통일 방안
+                            </label>
+                            <span class="text-xs text-stone-400 font-mono bg-stone-100 px-2 py-1 rounded" id="plan-counter">0/150자</span>
+                        </div>
+                        <textarea id="unification-plan" required maxlength="150" rows="3" oninput="updateLivePreview()"
+                            class="w-full px-4 py-3.5 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-600 text-sm sm:text-base leading-relaxed shadow-sm bg-stone-50/30"
+                            placeholder="남북 간 상호존중을 형성하기 위한 점진적 교류 방안과, 지금 우리 교실 혹은 일상생활에서 할 수 있는 구체적인 평화 실천 방법을 제안해 주세요."></textarea>
+                    </div>
+
+                    <!-- 발행 버튼 -->
+                    <button type="submit" id="btn-submit"
+                        class="w-full bg-stone-900 hover:bg-stone-800 text-white font-bold py-4 px-6 rounded-2xl text-base sm:text-lg transition duration-200 shadow-lg flex items-center justify-center gap-3 active:scale-95">
+                        <i class="fa-solid fa-paper-plane text-lg"></i> 나의 평화 통일 신문 발행하기
+                    </button>
+                </form>
+
+                <!-- 실시간 피드백 확인 섹션 -->
+                <div class="border-t border-stone-200 pt-6 mt-6">
+                    <h3 class="serif-title text-base font-bold text-stone-800 flex items-center gap-2 mb-2">
+                        <i class="fa-solid fa-envelope-open-text text-amber-600"></i> 선생님 실시간 피드백 확인
+                    </h3>
+                    <p class="text-xs text-stone-500 mb-4 leading-relaxed">
+                        학번 및 이름을 먼저 상단에 정확히 입력한 후 아래 버튼을 누르면 선생님께서 구글 시트에 기록해주신 등급과 피드백을 바로 조회할 수 있습니다.
+                    </p>
+                    <div class="space-y-4">
+                        <button type="button" id="btn-fetch-feedback" onclick="fetchStudentFeedback()"
+                            class="w-full bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold py-3.5 px-4 rounded-xl text-sm transition flex items-center justify-center gap-2 border border-stone-300 shadow-sm active:scale-95">
+                            <i class="fa-solid fa-square-rss text-stone-600"></i> 선생님 피드백 조회하기
+                        </button>
+
+                        <!-- 피드백 결과 표시창 (기본 숨김) -->
+                        <div id="feedback-result-container" class="hidden bg-stone-50 border border-stone-300 p-4 rounded-2xl shadow-inner space-y-3 transition-all duration-300">
+                            <div class="flex justify-between items-center pb-2 border-b border-stone-200">
+                                <span class="text-xs text-stone-400 font-mono"><i class="fa-regular fa-clock"></i> 실시간 연동됨</span>
+                                <span id="feedback-score-badge" class="text-xs font-bold px-2.5 py-1 rounded-full shrink-0">성취수준: 불러오는 중</span>
+                            </div>
+                            <div class="py-2">
+                                <p id="feedback-text-display" class="text-stone-700 text-sm italic font-serif leading-relaxed text-center break-all whitespace-pre-wrap">
+                                    "피드백 내용이 이곳에 표시됩니다."
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 오른쪽: 신문 실시간 렌더링 미리보기 -->
+            <section class="lg:col-span-7 bg-white border border-stone-400 shadow-xl p-4 sm:p-8 md:p-10 newspaper-grid rounded-2xl">
+                <div class="border border-stone-800 p-3 sm:p-6 bg-[#fcfbfa] h-full flex flex-col justify-between">
+                    <div>
+                        <!-- 헤드라인 정보 -->
+                        <div class="flex justify-between items-center text-[10px] sm:text-xs border-b border-stone-800 pb-2 mb-4 font-mono font-bold text-stone-600">
+                            <span>VOL. 2026 NO. 07</span>
+                            <span id="preview-author">기고인: 미작성</span>
+                        </div>
+
+                        <!-- 메인 제호 타이틀 -->
+                        <div class="newspaper-border py-4 text-center mb-6">
+                            <h2 class="serif-title text-2xl sm:text-4xl font-black tracking-tight text-gray-900 my-1">
+                                平和日報 <span class="text-sm sm:text-lg align-middle font-normal text-gray-600 block sm:inline sm:ml-2">평화 일보</span>
+                            </h2>
+                            <p class="text-[10px] sm:text-xs text-gray-500 mt-2 italic serif-title">"우리가 꿈꾸고 그리는 한반도의 바람직한 통일 로드맵"</p>
+                        </div>
+
+                        <!-- 3단 칼럼 레이아웃 (모바일 세로 흐름 차단 및 유지) -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+                            
+                            <!-- 1면: 분단의 문제점 -->
+                            <div class="border-b md:border-b-0 md:border-r border-stone-300 pb-4 md:pb-0 md:pr-4 flex flex-col justify-between">
+                                <div>
+                                    <span class="bg-red-100 text-red-800 text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded uppercase">1면 특파원 리포트</span>
+                                    <h3 class="serif-title font-bold text-stone-900 text-base mt-2 mb-2 leading-tight">분단이 안겨준 인도적·경제적 고통</h3>
+                                </div>
+                                <p id="preview-issue" class="text-stone-600 text-xs sm:text-sm leading-relaxed whitespace-pre-line font-serif italic flex-grow min-h-[100px] md:min-h-[150px]">
+                                    기사가 아직 작성되지 않았습니다. 왼쪽 기사 작성 데스크에서 분단의 문제점을 입력해 주세요...
+                                </p>
+                            </div>
+
+                            <!-- 2면: 통일의 필요성 -->
+                            <div class="border-b md:border-b-0 md:border-r border-stone-300 pb-4 md:pb-0 md:px-4 flex flex-col justify-between">
+                                <div>
+                                    <span class="bg-amber-100 text-amber-800 text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded uppercase">2면 오피니언 사설</span>
+                                    <h3 class="serif-title font-bold text-stone-900 text-base mt-2 mb-2 leading-tight">도덕적 가치에 따른 마땅한 통일 이유</h3>
+                                </div>
+                                <p id="preview-need" class="text-stone-600 text-xs sm:text-sm leading-relaxed whitespace-pre-line font-serif italic flex-grow min-h-[100px] md:min-h-[150px]">
+                                    기사가 아직 작성되지 않았습니다. 통일이 왜 필요한지 도덕적 가치(평화, 정의 등)를 담아 적어주세요...
+                                </p>
+                            </div>
+
+                            <!-- 3면: 통일 방안 -->
+                            <div class="pb-0 md:pl-4 flex flex-col justify-between">
+                                <div>
+                                    <span class="bg-emerald-100 text-emerald-800 text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded uppercase">3면 한반도 로드맵</span>
+                                    <h3 class="serif-title font-bold text-stone-900 text-base mt-2 mb-2 leading-tight">상호존중을 통한 점진적 통일 방안</h3>
+                                </div>
+                                <p id="preview-plan" class="text-stone-600 text-xs sm:text-sm leading-relaxed whitespace-pre-line font-serif italic flex-grow min-h-[100px] md:min-h-[150px]">
+                                    기사가 아직 작성되지 않았습니다. 남북이 함께 갈 공존의 방법 및 일상적 실천 방안을 제안해 주세요...
+                                </p>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- 신문 푸터 정보 -->
+                    <div class="border-t border-stone-800 pt-3 mt-8 flex flex-col sm:flex-row justify-between items-center text-[10px] font-bold text-stone-500">
+                        <span>평화와 존중을 지향하는 중학교 도덕 프로젝트</span>
+                        <span class="mt-1 sm:mt-0 font-serif">© 2026 THE PEACE DAILY NEWS</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- [모달창] 학생 발행 완료 및 공유 링크 팝업 -->
+    <div id="publish-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center p-4 z-50">
+        <div class="bg-stone-50 rounded-2xl max-w-lg w-full p-6 sm:p-8 border border-stone-300 shadow-2xl relative mx-4">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-stone-500 hover:text-stone-800 text-xl p-2">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-emerald-100 text-emerald-600 mb-4 text-3xl">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <h3 class="serif-title text-xl sm:text-2xl font-bold text-stone-900 mb-2">통일 평화 신문 발행 성공!</h3>
+                <p class="text-xs sm:text-sm text-stone-600 mb-6">작성하신 기사가 구글 데이터 서버에 저장되고 아래의 디지털 신문 링크가 발급되었습니다.</p>
+                
+                <div class="bg-stone-200 border border-stone-300 p-3 rounded-xl text-xs text-stone-700 font-mono break-all text-left mb-6 flex justify-between items-center gap-2">
+                    <span id="output-url" class="truncate">연동 대기 중...</span>
+                    <button onclick="copyLink()" class="bg-stone-900 hover:bg-stone-800 text-white text-xs px-4 py-2.5 rounded-lg shrink-0 font-sans font-bold shadow-sm">
+                        <i class="fa-solid fa-copy mr-1"></i> 복사
+                    </button>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl text-left mb-6 flex items-start gap-3">
+                    <i class="fa-solid fa-circle-info text-amber-600 mt-0.5 shrink-0 text-base"></i>
+                    <div>
+                        <h4 class="text-xs font-bold text-amber-800 mb-1">패들렛(Padlet) 공유 단계</h4>
+                        <p class="text-[11px] text-amber-700 leading-relaxed">복사한 링크 주소로 패들렛(Padlet)으로 이동하여 붙여넣어 주세요! 친구들과 한반도 평화 로드맵을 함께 읽고 서로의 기사를 응원합시다.</p>
+                    </div>
+                </div>
+
+                <button onclick="closeModal()" class="w-full bg-stone-900 hover:bg-stone-800 text-white font-bold py-3.5 rounded-xl transition text-base shadow">
+                    확인하고 닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI Toast 알림 -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-stone-900 text-white text-xs sm:text-sm px-4 py-3.5 rounded-xl shadow-2xl translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-2">
+        <span id="toast-icon">🕊️</span>
+        <span id="toast-message">알림 메시지</span>
+    </div>
+
+    <script>
+        const DEFAULT_API_URL = "https://script.google.com/macros/s/AKfycbwvLG7pjUfnqR9NEcsl_c0JsO-68qdES5AauIrmEFpEdOKzF4gmcWMR23gZXZohHaYq/exec";
+
+        window.onload = function() {
+            let savedApi = localStorage.getItem('peace_news_api_url');
+            if (!savedApi) {
+                savedApi = DEFAULT_API_URL;
+                localStorage.setItem('peace_news_api_url', DEFAULT_API_URL);
+            }
+            document.getElementById('api-url').value = savedApi;
+
+            // 보관 기사 유무 체크
+            const lastData = localStorage.getItem('peace_news_last_submitted_payload');
+            if (lastData) {
+                document.getElementById('restore-banner').classList.remove('hidden');
+            }
+
+            updateLivePreview();
+        };
+
+        function saveApiUrl() {
+            const url = document.getElementById('api-url').value.trim();
+            localStorage.setItem('peace_news_api_url', url);
+            showToast("⚙️ 설정 완료", "API 주소가 반영되었습니다.");
+        }
+
+        function loadLastSubmission() {
+            const lastData = localStorage.getItem('peace_news_last_submitted_payload');
+            if (lastData) {
+                const article = JSON.parse(lastData);
+                document.getElementById('student-code').value = article.학생코드 || '';
+                document.getElementById('division-issue').value = article.분단_문제점 || '';
+                document.getElementById('unification-need').value = article.통일_필요성 || '';
+                document.getElementById('unification-plan').value = article.통일_방안 || '';
+                
+                updateLivePreview();
+                showToast("🕊️ 기사 복원", "이전 발행 기사 내용을 성공적으로 불러왔습니다.");
+                document.getElementById('restore-banner').classList.add('hidden');
+            }
+        }
+
+        function updateLivePreview() {
+            const code = document.getElementById('student-code').value.trim();
+            const issue = document.getElementById('division-issue').value;
+            const need = document.getElementById('unification-need').value;
+            const plan = document.getElementById('unification-plan').value;
+
+            document.getElementById('issue-counter').textContent = `${issue.length}/150자`;
+            document.getElementById('need-counter').textContent = `${need.length}/150자`;
+            document.getElementById('plan-counter').textContent = `${plan.length}/150자`;
+
+            document.getElementById('preview-author').textContent = code ? `기자: ${code}` : "기자: 미작성";
+            document.getElementById('preview-issue').textContent = issue.trim() ? issue : "기사가 아직 작성되지 않았습니다. 분단의 문제점을 10자 이상 채워 작성해 주세요...";
+            document.getElementById('preview-need').textContent = need.trim() ? need : "기사가 아직 작성되지 않았습니다. 통일이 왜 필요한지 도덕 가치를 담아 채워주세요...";
+            document.getElementById('preview-plan').textContent = plan.trim() ? plan : "기사가 아직 작성되지 않았습니다. 실천 가능한 우리 생활 속 평화 로드맵을 제안해 주세요...";
+        }
+
+        async function submitArticle(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit');
+            const code = document.getElementById('student-code').value.trim();
+            const issue = document.getElementById('division-issue').value.trim();
+            const need = document.getElementById('unification-need').value.trim();
+            const plan = document.getElementById('unification-plan').value.trim();
+
+            if (!code) {
+                showToast("⚠️ 학번 미입력", "학번과 이름을 올바르게 작성해 주세요.");
+                return;
+            }
+            if (issue.length < 10 || need.length < 10 || plan.length < 10) {
+                showToast("⚠️ 글자수 부족", "각 항목을 10자 이상 정성껏 성의있게 기술해 주셔야 발행이 가능합니다.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 기사 발행 서버 전송 중...`;
+
+            const payload = {
+                sheetName: "학생응답",
+                학생코드: code,
+                분단_문제점: issue,
+                통일_필요성: need,
+                통일_방안: plan
+            };
+
+            localStorage.setItem('peace_news_last_submitted_payload', JSON.stringify(payload));
+            const apiUrl = document.getElementById('api-url').value.trim();
+
+            if (apiUrl) {
+                try {
+                    await fetch(apiUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const mockUrl = `${apiUrl}?sheet=학생응답&code=${encodeURIComponent(code)}`;
+                    showPublishSuccess(mockUrl);
+                } catch (error) {
+                    const fallbackUrl = `${window.location.origin}${window.location.pathname}?code=${encodeURIComponent(code)}`;
+                    showPublishSuccess(fallbackUrl);
+                }
+            } else {
+                const fallbackUrl = `${window.location.origin}${window.location.pathname}?code=${encodeURIComponent(code)}`;
+                showPublishSuccess(fallbackUrl);
+            }
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-paper-plane text-lg"></i> 나의 평화 통일 신문 발행하기`;
+        }
+
+        function showPublishSuccess(url) {
+            document.getElementById('output-url').textContent = url;
+            const modal = document.getElementById('publish-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            copyToClipboard(url);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('publish-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function copyLink() {
+            const url = document.getElementById('output-url').textContent;
+            copyToClipboard(url);
+        }
+
+        function copyToClipboard(text) {
+            const tempInput = document.createElement("input");
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            showToast("📋 링크 복사 완료", "패들렛(Padlet) 창에 붙여넣기(Ctrl+V) 하시면 됩니다!");
+        }
+
+        async function fetchStudentFeedback() {
+            const code = document.getElementById('student-code').value.trim();
+            if (!code) {
+                showToast("⚠️ 학번 미입력", "학번 및 이름을 입력해야 피드백을 조회할 수 있습니다.");
+                return;
+            }
+
+            const btn = document.getElementById('btn-fetch-feedback');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 피드백 데이터 조회 중...`;
+
+            const apiUrl = document.getElementById('api-url').value.trim();
+            const feedbackContainer = document.getElementById('feedback-result-container');
+            const feedbackText = document.getElementById('feedback-text-display');
+            const feedbackScore = document.getElementById('feedback-score-badge');
+
+            try {
+                if (apiUrl) {
+                    const response = await fetch(`${apiUrl}?sheet=피드백`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (Array.isArray(data)) {
+                            const found = data.find(f => (f.학생코드 || f.A || '').toString().trim() === code);
+                            if (found) {
+                                feedbackContainer.classList.remove('hidden');
+                                const score = found.최종_점수 || found.피드백_점수 || found.B || '중';
+                                const comment = found.교사_피드백 || found.피드백_내용 || found.C || '';
+                                
+                                feedbackText.textContent = `"${comment}"`;
+                                feedbackScore.className = "text-xs font-bold px-2.5 py-1 rounded-full shrink-0 uppercase tracking-wider";
+                                if (score === '상') {
+                                    feedbackScore.className = "text-xs font-bold px-2.5 py-1 rounded-full shrink-0 bg-green-100 text-green-800";
+                                    feedbackScore.textContent = "성취수준: 상 (우수)";
+                                } else if (score === '중') {
+                                    feedbackScore.className = "text-xs font-bold px-2.5 py-1 rounded-full shrink-0 bg-amber-100 text-amber-800";
+                                    feedbackScore.textContent = "성취수준: 중 (보통)";
+                                } else {
+                                    feedbackScore.className = "text-xs font-bold px-2.5 py-1 rounded-full shrink-0 bg-red-100 text-red-800";
+                                    feedbackScore.textContent = "성취수준: 하 (미흡)";
+                                }
+                                showToast("✉️ 피드백 도착", "선생님의 기기 평가 내용을 안전하게 조회했습니다.");
+                                btn.disabled = false;
+                                btn.innerHTML = `<i class="fa-solid fa-square-rss text-stone-600"></i> 선생님 피드백 조회하기`;
+                                return;
+                            }
+                        }
+                    }
+                }
+                feedbackContainer.classList.add('hidden');
+                showToast("🔍 피드백 보류", "아직 기사가 제출되지 않았거나 평가 정보가 기록되지 않았습니다.");
+            } catch (err) {
+                feedbackContainer.classList.add('hidden');
+                showToast("❌ 조회 불가", "네트워크 환경이나 API 배포 링크 상태를 다시 확인해 주세요.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-square-rss text-stone-600"></i> 선생님 피드백 조회하기`;
+            }
+        }
+
+        function showToast(title, msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerHTML = `<strong>${title}</strong>: ${msg}`;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
