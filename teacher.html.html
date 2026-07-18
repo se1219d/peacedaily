@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>평화일보 - 교사용 통합 평가 대시보드</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts & Pretendard Webfont -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: #f1f5f9;
+            color: #1e293b;
+            overflow-x: hidden;
+        }
+        .serif-text {
+            font-family: 'Noto Serif KR', serif;
+        }
+        p, div, span, h1, h2, h3, h4, td, th {
+            word-break: break-all; 
+            overflow-wrap: break-word; 
+        }
+        /* 연합뉴스 테마 블루 컬러 */
+        .color-yna-blue { color: #005bac; }
+        .bg-yna-blue { background-color: #005bac; }
+        /* 스크롤 커스터마이징 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- 1. 교사 인증 잠금 패널 -->
+    <div id="lock-screen" class="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center z-50 p-4 transition-all duration-500">
+        <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full text-center">
+            <div class="w-16 h-16 bg-blue-50 text-[#005bac] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl border border-blue-100">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h3 class="serif-text text-xl sm:text-2xl font-black text-slate-800 mb-2">교사 전용 인증 데스크</h3>
+            <p class="text-xs text-slate-400 mb-6 leading-relaxed">학생 제출 현황 조회 및 AI 기반 피드백 작성을 완료하기 위해 학급 마스터 코드를 입력해 주세요.</p>
+            <form onsubmit="verifyPassword(event)" class="space-y-4">
+                <input type="password" id="admin-password" required 
+                    class="w-full px-4 py-3 border.5 border-slate-300 rounded-xl text-center text-sm focus:outline-none focus:ring-2 focus:ring-[#005bac]" 
+                    placeholder="패스코드 입력">
+                <div id="password-error" class="text-red-500 text-xs font-bold hidden animate-pulse">⚠️ 패스코드가 일치하지 않습니다.</div>
+                <button type="submit" class="w-full bg-[#005bac] hover:bg-[#004b8d] text-white font-bold py-3.5 rounded-xl text-sm transition active:scale-95 shadow-md">
+                    잠금 장치 해제
+                </button>
+            </form>
+            <p class="text-[10px] text-slate-400 mt-4 italic">기본 마스터 비밀번호: peace2026</p>
+        </div>
+    </div>
+
+    <!-- 2. 교사용 본문 대시보드 (보안 해제 시 활성화) -->
+    <div id="dashboard-content" class="hidden flex-grow flex flex-col">
+        <!-- 상단 헤더 영역 -->
+        <header class="bg-[#1e293b] text-white shadow-lg px-4 py-4 sm:px-6">
+            <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="bg-red-600 text-white text-[10px] font-extrabold px-2.5 py-1 rounded">교사 모드</span>
+                    <h1 class="serif-text text-base sm:text-lg md:text-xl font-black tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-clipboard-check text-amber-400"></i> 평화일보 실시간 클라우드 채점보드
+                    </h1>
+                </div>
+                <div class="flex items-center gap-2 w-full md:w-auto">
+                    <div class="flex items-center bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 flex-grow max-w-sm">
+                        <span class="text-[11px] text-slate-400 mr-2 whitespace-nowrap">API URL:</span>
+                        <input type="url" id="api-url" class="bg-transparent text-slate-200 text-xs focus:outline-none w-full font-mono placeholder-slate-600" value="https://script.google.com/macros/s/AKfycbwvLG7pjUfnqR9NEcsl_c0JsO-68qdES5AauIrmEFpEdOKzF4gmcWMR23gZXZohHaYq/exec">
+                    </div>
+                    <button onclick="lockDashboard()" class="bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white px-3 py-1.5 rounded text-xs font-bold transition flex items-center gap-1.5 border border-red-500/20">
+                        <i class="fa-solid fa-user-lock"></i> 잠금
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 메인 분석 패널 -->
+        <main class="max-w-7xl w-full mx-auto p-4 md:p-6 flex-grow flex flex-col gap-6">
+            
+            <!-- 상단 요약 배너 및 정렬 검색 바 -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm">
+                <div>
+                    <h2 class="serif-text text-base sm:text-lg font-black text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-[#005bac]"></i> 학급 성취 결과 및 실시간 뉴스 제출 현황판
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-1">학생들이 제출한 글을 평가하고, AI 맞춤 기능을 적용해 60자 이내의 격려를 전송하세요.</p>
+                </div>
+                <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                    <input type="text" id="search-bar" oninput="filterStudents()" 
+                        class="px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#005bac] w-full md:w-48" 
+                        placeholder="학번 혹은 이름 검색...">
+                    <button onclick="fetchStudentData()" class="bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold px-3 py-2 rounded-lg transition border border-slate-300 flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-arrows-spin"></i> 새로고침
+                    </button>
+                    <button onclick="downloadCSVReport()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition flex items-center justify-center gap-1 shadow">
+                        <i class="fa-solid fa-file-csv"></i> Excel 다운로드
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3단 분할 작업 데스크 -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch flex-grow">
+                
+                <!-- [좌측 1단] 제출 학생 목록 (4 cols) -->
+                <section class="lg:col-span-3 bg-white border border-slate-200 rounded-2xl p-4 flex flex-col h-[650px] shadow-sm">
+                    <h3 class="serif-text text-sm font-black text-slate-800 border-b pb-2 mb-3 flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-group text-slate-500"></i> 제출 학생 목록
+                    </h3>
+                    <div class="flex-grow overflow-y-auto border border-slate-150 rounded-lg divide-y divide-slate-150" id="student-roll">
+                        <div class="text-center py-12 text-slate-400 text-xs">데이터 로딩 대기 중...</div>
+                    </div>
+                </section>
+
+                <!-- [중앙 2단] 연합뉴스 포털 스타일 미리보기 (6 cols) -->
+                <section class="lg:col-span-6 bg-white border border-slate-250 shadow-sm rounded-2xl p-4 sm:p-5 flex flex-col h-[650px]">
+                    <div class="flex justify-between items-center text-xs pb-2 border-b border-[#eeeeee] shrink-0 mb-4">
+                        <span class="font-bold text-[#005bac]"><i class="fa-solid fa-circle-nodes"></i> 연합뉴스 스타일 실시간 뉴스 룸</span>
+                        <span class="text-slate-400 font-mono text-[10px]" id="current-news-time">2026-07-18</span>
+                    </div>
+
+                    <!-- 뉴스 렌더링 스크롤 박스 -->
+                    <div class="flex-grow overflow-y-auto border border-slate-200 rounded-xl p-5 bg-[#faf9f6] flex flex-col justify-between" id="newspaper-panel">
+                        <div class="text-center text-slate-400 py-32 font-serif flex flex-col items-center justify-center gap-3">
+                            <i class="fa-solid fa-hand-pointer text-4xl text-slate-300 animate-bounce"></i>
+                            <span class="text-xs">왼쪽 목록에서 분석할 학생의 기사를 클릭해 주세요.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- [우측 3단] 성취도 및 피드백 데스크 (3 cols) -->
+                <section class="lg:col-span-3 bg-white border border-slate-200 rounded-2xl shadow-sm p-4.5 flex flex-col justify-between h-[650px]">
+                    <div>
+                        <h3 class="serif-text text-sm font-black text-slate-800 border-b pb-3 mb-4 flex items-center gap-1.5">
+                            <i class="fa-solid fa-wand-magic-sparkles text-purple-500 animate-pulse"></i> 실시간 피드백 데스크
+                        </h3>
+
+                        <!-- 선택 학생 박스 -->
+                        <div class="bg-blue-50 border border-blue-100 rounded-xl p-3.5 mb-4">
+                            <span class="text-[9px] text-blue-600 font-extrabold uppercase block">평가 대상 학생</span>
+                            <div class="text-xs font-bold text-slate-800 mt-1" id="eval-student-target">
+                                <span class="text-slate-400 font-normal">학생 대기 중...</span>
+                            </div>
+                        </div>
+
+                        <!-- 채점 루브릭 및 성취 등급 -->
+                        <div class="space-y-4">
+                            <!-- AI 호출 버튼 -->
+                            <button onclick="triggerAIFeedback()" id="btn-ai-generate" disabled
+                                class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition duration-200 flex items-center justify-center gap-1.5 shadow active:scale-95 cursor-not-allowed">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> 🔮 AI 피드백 추천 생성
+                            </button>
+
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1.5">성취 수준 등급</label>
+                                <div class="grid grid-cols-3 gap-1">
+                                    <button type="button" onclick="selectScoreValue('상')" id="btn-score-high"
+                                        class="border border-slate-200 py-2 text-xs rounded-lg font-bold hover:bg-slate-50 transition bg-white text-slate-700">상</button>
+                                    <button type="button" onclick="selectScoreValue('중')" id="btn-score-mid"
+                                        class="border border-slate-200 py-2 text-xs rounded-lg font-bold hover:bg-slate-50 transition bg-white text-slate-700">중</button>
+                                    <button type="button" onclick="selectScoreValue('하')" id="btn-score-low"
+                                        class="border border-slate-200 py-2 text-xs rounded-lg font-bold hover:bg-slate-50 transition bg-white text-slate-700">하</button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="eval-comment" class="block text-[11px] font-bold text-slate-700 mb-1.5">
+                                    격려 및 피드백 코멘트 <span class="text-[9px] text-purple-600">(60자 이내 규칙)</span>
+                                </label>
+                                <textarea id="eval-comment" rows="6"
+                                    class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs leading-relaxed focus:outline-none focus:ring-1 focus:ring-[#005bac] bg-slate-50/50 focus:bg-white"
+                                    placeholder="도덕 수업 채점 결과를 가다듬고 학생에게 전송하세요."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-150">
+                        <button onclick="submitEvaluation()" id="btn-save" disabled
+                            class="w-full bg-slate-300 text-slate-500 font-bold py-3.5 rounded-xl text-xs transition-all duration-150 flex items-center justify-center gap-2 cursor-not-allowed">
+                            <i class="fa-solid fa-floppy-disk"></i> 도덕 평가 결과 저장 및 배포
+                        </button>
+                        <p class="text-[9px] text-center text-slate-400 mt-2.5">저장된 기록은 구글 '피드백' 시트에 자동 전송되며, 학생이 즉각 조회 가능합니다.</p>
+                    </div>
+                </section>
+
+            </div>
+
+        </main>
+    </div>
+
+    <!-- 푸터 -->
+    <footer class="bg-slate-900 border-t border-slate-800 text-slate-400 text-center py-4.5 text-[10px] shrink-0">
+        <span>🕊️ 중등 도덕과 디지털 한반도 평화일보 스마트 채점 포털</span>
+    </footer>
+
+    <!-- 알림 Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white text-xs px-4 py-3.5 rounded-xl shadow-2xl translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-2 border border-slate-700">
+        <span id="toast-ico" class="text-base">🔔</span>
+        <span id="toast-msg" class="font-medium">알림 메시지</span>
+    </div>
+
+    <script>
+        const MASTER_PASSWORD = "peace2026";
+        let currentActiveCode = null;
+        let currentSelectedScore = "";
+        let studentsList = [];
+        let currentSelectedStudent = null;
+
+        // 로컬 피드백 데이터 스토어
+        const localDb = {
+            feedback: {}
+        };
+
+        window.onload = function() {
+            const dateStr = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            document.getElementById('current-news-time').textContent = dateStr;
+
+            const savedApi = localStorage.getItem('peace_news_api_url');
+            if (savedApi) {
+                document.getElementById('api-url').value = savedApi;
+            }
+
+            const savedFeedback = localStorage.getItem('teacher_local_eval_db');
+            if (savedFeedback) {
+                localDb.feedback = JSON.parse(savedFeedback);
+            }
+        };
+
+        function verifyPassword(e) {
+            e.preventDefault();
+            const entered = document.getElementById('admin-password').value.trim();
+            const errorMsg = document.getElementById('password-error');
+
+            if (entered === MASTER_PASSWORD) {
+                document.getElementById('lock-screen').classList.add('opacity-0', 'pointer-events-none');
+                document.getElementById('dashboard-content').classList.remove('hidden');
+                errorMsg.classList.add('hidden');
+                showToast("🔓 잠금 해제", "교사 채점 세션이 무사히 활성화되었습니다.");
+                fetchStudentData();
+            } else {
+                errorMsg.classList.remove('hidden');
+                document.getElementById('admin-password').value = "";
+                document.getElementById('admin-password').focus();
+            }
+        }
+
+        function lockDashboard() {
+            document.getElementById('lock-screen').classList.remove('opacity-0', 'pointer-events-none');
+            document.getElementById('dashboard-content').classList.add('hidden');
+            document.getElementById('admin-password').value = "";
+            showToast("🔒 세션 차단", "기록 보호를 위해 화면을 임시 잠금 처리했습니다.");
+        }
+
+        async function fetchStudentData() {
+            const listContainer = document.getElementById('student-roll');
+            listContainer.innerHTML = `
+                <div class="text-center p-12 text-slate-400 text-xs">
+                    <i class="fa-solid fa-spinner animate-spin text-lg mb-2 block"></i>
+                    학생 데이터 목록 로딩 중...
+                </div>
+            `;
+
+            const apiUrl = document.getElementById('api-url').value.trim();
+
+            if (apiUrl) {
+                try {
+                    const response = await fetch(`${apiUrl}?sheet=학생응답`);
+                    const cloudData = await response.json();
+                    if (Array.isArray(cloudData)) {
+                        studentsList = cloudData;
+                    } else {
+                        throw new Error("정합성 에러");
+                    }
+                } catch (err) {
+                    console.error("클라우드 통신 실패, 가상 데이터 로딩:", err);
+                    showToast("⚠️ 오프라인 모드", "네트워크 미동작으로 로컬 더미 리스트를 출력합니다.");
+                    studentsList = getFallbackMockStudents();
+                }
+            } else {
+                studentsList = getFallbackMockStudents();
+            }
+
+            renderStudentsList(studentsList);
+        }
+
+        function renderStudentsList(list) {
+            const container = document.getElementById('student-roll');
+            container.innerHTML = "";
+
+            if (list.length === 0) {
+                container.innerHTML = `<div class="text-center py-16 text-slate-400 text-xs">필터링 조건에 부합하는 제출물이 없습니다.</div>`;
+                return;
+            }
+
+            list.forEach(student => {
+                const code = student.학생코드 || student.A || student.User_ID || '미기재';
+                const timeStr = student.제출시각 ? new Date(student.제출시각).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '미확인';
+                
+                const isEvaluated = localDb.feedback[code] ? true : false;
+                const score = isEvaluated ? localDb.feedback[code].score : null;
+
+                let badgeHtml = `<span class="bg-slate-100 text-slate-400 text-[10px] px-2.5 py-0.5 rounded-full font-bold">미평가</span>`;
+                if (isEvaluated) {
+                    if (score === '상') badgeHtml = `<span class="bg-green-100 text-green-700 text-[10px] px-2.5 py-0.5 rounded-full font-bold">상 (A)</span>`;
+                    else if (score === '중') badgeHtml = `<span class="bg-amber-100 text-amber-700 text-[10px] px-2.5 py-0.5 rounded-full font-bold">중 (B)</span>`;
+                    else badgeHtml = `<span class="bg-red-100 text-red-700 text-[10px] px-2.5 py-0.5 rounded-full font-bold">하 (C)</span>`;
+                }
+
+                const card = document.createElement('div');
+                card.className = `p-3.5 hover:bg-slate-50 cursor-pointer flex justify-between items-center transition ${currentActiveCode === code ? 'bg-blue-50/70 border-l-4 border-[#005bac]' : ''}`;
+                card.onclick = () => selectStudent(student, code);
+                
+                card.innerHTML = `
+                    <div class="space-y-1">
+                        <div class="text-xs font-bold text-slate-800"><i class="fa-regular fa-id-card"></i> ${code}</div>
+                        <div class="text-[10px] text-slate-400"><i class="fa-regular fa-clock"></i> ${timeStr}</div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        ${badgeHtml}
+                        <i class="fa-solid fa-chevron-right text-slate-300 text-[10px]"></i>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function filterStudents() {
+            const keyword = document.getElementById('search-bar').value.toLowerCase().trim();
+            const filtered = studentsList.filter(student => {
+                const code = (student.학생코드 || student.A || '').toLowerCase();
+                return code.includes(keyword);
+            });
+            renderStudentsList(filtered);
+        }
+
+        function selectStudent(student, code) {
+            currentActiveCode = code;
+            currentSelectedStudent = student;
+            
+            filterStudents();
+
+            const panel = document.getElementById('newspaper-panel');
+            const submitTime = student.제출시각 ? new Date(student.제출시각).toLocaleDateString() : '확인 중';
+
+            const issue = student.분단_문제점 || student.B || '';
+            const need = student.통일_필요성 || student.C || '';
+            const plan = student.통일_방안 || student.D || '';
+            const url = student.신문_URL || student.E || '#';
+
+            panel.innerHTML = `
+                <div class="flex flex-col justify-between h-full space-y-4">
+                    <div>
+                        <div class="flex justify-between items-center text-[10px] font-mono text-slate-500 border-b pb-2 mb-3">
+                            <span>VOL. 2026-0718</span>
+                            <span>작성 기자: ${code}</span>
+                        </div>
+
+                        <div class="border-y-2 border-slate-800 py-2.5 text-center mb-4">
+                            <h4 class="serif-text text-xl font-black text-slate-900 tracking-tight">平和日報 <span class="text-[10px] font-normal text-slate-500 ml-1">평화 일보</span></h4>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-5 text-xs">
+                            
+                            <div class="md:col-span-7 space-y-2.5">
+                                <div class="bg-slate-200 rounded-lg overflow-hidden aspect-video relative border">
+                                    <svg class="w-full h-full text-[#4a5568]" viewBox="0 0 200 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect width="200" height="110" fill="#2d3748"/>
+                                        <line x1="100" y1="0" x2="100" y2="110" stroke="#e53e3e" stroke-width="2" stroke-dasharray="4,4"/>
+                                        <text x="15" y="25" fill="#fff" font-family="Pretendard" font-size="9" font-weight="bold">남</text>
+                                        <text x="165" y="25" fill="#fff" font-family="Pretendard" font-size="9" font-weight="bold">북</text>
+                                        <text x="65" y="90" fill="#feb2b2" font-family="Pretendard" font-size="8" font-weight="bold">분단의 고통 분석</text>
+                                    </svg>
+                                    <span class="absolute top-1 left-1 bg-red-600 text-white text-[8px] font-black uppercase px-1.5 py-0.5 rounded">1면 보도</span>
+                                </div>
+                                <h5 class="serif-text font-bold text-slate-900 text-xs sm:text-sm leading-snug">"분단 비극 해결과 대치 상황 완화가 최우선 도덕 실천"</h5>
+                                <p class="text-slate-600 leading-relaxed font-serif italic text-[11px] whitespace-pre-wrap pl-1 border-l border-red-500">
+                                    ${issue || '<span class="text-slate-300">미제출</span>'}
+                                </p>
+                            </div>
+
+                            <div class="md:col-span-5 space-y-4 md:border-l md:pl-4">
+                                <div>
+                                    <span class="text-[9px] text-amber-600 font-extrabold uppercase block">2면 사설</span>
+                                    <h6 class="serif-text font-bold text-slate-900 text-[11px] mb-1 leading-tight">정의로운 한반도 인권 증진</h6>
+                                    <p class="text-slate-600 leading-relaxed font-serif italic text-[11px] whitespace-pre-wrap pl-1 border-l border-amber-500">
+                                        ${need || '<span class="text-slate-300">미제출</span>'}
+                                    </p>
+                                </div>
+                                <div class="border-t pt-3">
+                                    <span class="text-[9px] text-emerald-600 font-extrabold uppercase block">3면 평화 로드맵</span>
+                                    <h6 class="serif-text font-bold text-slate-900 text-[11px] mb-1 leading-tight">일상 평화 감수성 가꾸기</h6>
+                                    <p class="text-slate-600 leading-relaxed font-serif italic text-[11px] whitespace-pre-wrap pl-1 border-l border-emerald-500">
+                                        ${plan || '<span class="text-slate-300">미제출</span>'}
+                                    </p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="border-t pt-2 mt-4 flex justify-between items-center text-[9px] text-slate-400 font-bold shrink-0">
+                        <span>전송일시: ${submitTime}</span>
+                        <a href="${url}" target="_blank" class="text-[#005bac] hover:underline flex items-center gap-0.5">
+                            <i class="fa-solid fa-up-right-from-square"></i> 단독 기사창 열기
+                        </a>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('eval-student-target').innerHTML = `
+                <span class="text-slate-800 font-bold"><i class="fa-regular fa-user"></i> ${code}</span>
+            `;
+
+            const existEval = localDb.feedback[code];
+            if (existEval) {
+                selectScoreValue(existEval.score);
+                document.getElementById('eval-comment').value = existEval.comment;
+            } else {
+                resetScoreButtons();
+                document.getElementById('eval-comment').value = "";
+            }
+
+            const saveBtn = document.getElementById('btn-save');
+            const aiBtn = document.getElementById('btn-ai-generate');
+            saveBtn.disabled = false;
+            saveBtn.className = "w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-xl text-xs transition duration-200 flex items-center justify-center gap-2 cursor-pointer shadow";
+            aiBtn.disabled = false;
+            aiBtn.className = "w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition duration-200 flex items-center justify-center gap-1.5 shadow active:scale-95 cursor-pointer";
+        }
+
+        function detectGibberish(text) {
+            if (!text || text.trim().length === 0) return true;
+            const cleanText = text.replace(/[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣]/g, "").trim();
+            if (cleanText.length < 10) return true;
+            
+            const isRepeating = /(.)\1{4,}/g.test(cleanText);
+            if (isRepeating) return true;
+
+            const isSingleJamoOnly = /^[ㄱ-ㅎㅏ-ㅣ\s]+$/.test(cleanText);
+            if (isSingleJamoOnly && cleanText.length > 3) return true;
+
+            return false;
+        }
+
+        async function triggerAIFeedback() {
+            if (!currentSelectedStudent) return;
+            const btn = document.getElementById('btn-ai-generate');
+            const originalHtml = btn.innerHTML;
+
+            const code = currentSelectedStudent.학생코드 || currentSelectedStudent.A || '';
+            const issue = currentSelectedStudent.분단_문제점 || currentSelectedStudent.B || '';
+            const need = currentSelectedStudent.통일_필요성 || currentSelectedStudent.C || '';
+            const plan = currentSelectedStudent.통일_방안 || currentSelectedStudent.D || '';
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 대안 추천 분석 중...`;
+
+            if (detectGibberish(issue) || detectGibberish(need) || detectGibberish(plan)) {
+                setTimeout(() => {
+                    selectScoreValue('하');
+                    const textarea = document.getElementById('eval-comment');
+                    textarea.value = "의미 없는 문자나 단순 반복 입력은 평가할 수 없어요. 내용을 정성껏 채워 봐요.";
+                    
+                    textarea.classList.add('ring-4', 'ring-red-400', 'bg-red-50');
+                    setTimeout(() => { textarea.classList.remove('ring-4', 'ring-red-400', 'bg-red-50'); }, 1200);
+
+                    btn.disabled = false;
+                    btn.className = "w-full bg-red-600 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow";
+                    btn.innerHTML = `<i class="fa-solid fa-shield-halved"></i> 도배 차단 필터`;
+                    
+                    setTimeout(() => {
+                        btn.className = "w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition duration-200 flex items-center justify-center gap-1.5 shadow active:scale-95 cursor-pointer";
+                        btn.innerHTML = originalHtml;
+                    }, 2500);
+
+                    showToast("⚠️ 도배 확인", "가독성이 심하게 낮거나 자판을 함부로 친 글로 판단해 '하' 등급을 적용했습니다.");
+                }, 400);
+                return;
+            }
+
+            const apiUrl = document.getElementById('api-url').value.trim();
+            if (apiUrl) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: "ai_evaluate",
+                            issue: issue,
+                            need: need,
+                            plan: plan
+                        })
+                    });
+                    const resJson = await response.json();
+                    
+                    if (resJson && resJson.result === "success") {
+                        selectScoreValue(resJson.score || '중');
+                        const textarea = document.getElementById('eval-comment');
+                        textarea.value = resJson.feedback || '';
+                        
+                        textarea.classList.add('ring-4', 'ring-purple-400', 'bg-purple-50');
+                        setTimeout(() => { textarea.classList.remove('ring-4', 'ring-purple-400', 'bg-purple-50'); }, 1200);
+
+                        showToast("🪄 AI 맞춤 추천", "60자 미만 도덕 교과 성취기준에 최적화된 총평이 입력되었습니다.");
+                    } else {
+                        throw new Error("AI 처리 보류");
+                    }
+                } catch (err) {
+                    console.error("오프라인 룰 가이드 가동:", err);
+                    fallbackLocalAI(issue, need, plan);
+                }
+            } else {
+                fallbackLocalAI(issue, need, plan);
+            }
+
+            btn.disabled = false;
+            btn.className = "w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition duration-200 flex items-center justify-center gap-1.5 shadow active:scale-95 cursor-pointer";
+            btn.innerHTML = originalHtml;
+        }
+
+        function fallbackLocalAI(issue, need, plan) {
+            let score = "중";
+            let text = "";
+
+            const hasIssue = issue && issue.trim().length > 10;
+            const hasNeed = need && need.trim().length > 10;
+            const hasPlan = plan && plan.trim().length > 10;
+
+            if (hasIssue && hasNeed && hasPlan) {
+                score = "상";
+                text = "분단 아픔을 깊이 공감한 점이 훌륭해요. 일상 속 구체적인 평화 실천 방안을 한 줄 더 보완해 주세요.";
+            } else if (hasIssue || hasNeed || hasPlan) {
+                score = "중";
+                text = "통일의 당위성을 도덕적으로 잘 짚었어요. 분단으로 인한 인도적 아픔 부분도 한 줄 보완해 보세요.";
+            } else {
+                score = "하";
+                text = "기사 작성을 시도한 열정이 멋져요. 분단 문제와 통일 방안의 세부 내용을 한 줄씩 더 보완해 주세요.";
+            }
+
+            selectScoreValue(score);
+            document.getElementById('eval-comment').value = text;
+            showToast("🪄 오프라인 가이드 셋업", "브라우저 엔진 기반으로 피드백을 가구성했습니다.");
+        }
+
+        function selectScoreValue(score) {
+            currentSelectedScore = score;
+            resetScoreButtons();
+
+            const btnHigh = document.getElementById('btn-score-high');
+            const btnMid = document.getElementById('btn-score-mid');
+            const btnLow = document.getElementById('btn-score-low');
+
+            if (score === '상') {
+                btnHigh.className = "bg-green-500 border border-green-600 text-white py-2 text-xs rounded-lg font-extrabold shadow-inner";
+            } else if (score === '중') {
+                btnMid.className = "bg-amber-500 border border-amber-600 text-white py-2 text-xs rounded-lg font-extrabold shadow-inner";
+            } else if (score === '하') {
+                btnLow.className = "bg-red-500 border border-red-600 text-white py-2 text-xs rounded-lg font-extrabold shadow-inner";
+            }
+        }
+
+        function resetScoreButtons() {
+            const btns = ['btn-score-high', 'btn-score-mid', 'btn-score-low'];
+            btns.forEach(id => {
+                document.getElementById(id).className = "border border-slate-200 py-2 text-xs rounded-lg font-bold hover:bg-slate-50 transition bg-white text-slate-700 shadow-sm";
+            });
+        }
+
+        async function submitEvaluation() {
+            if (!currentActiveCode) return;
+            const comment = document.getElementById('eval-comment').value.trim();
+
+            if (!currentSelectedScore) {
+                showToast("⚠️ 등급 누락", "성취도 결과 등급을 먼저 지정해 주세요.");
+                return;
+            }
+
+            localDb.feedback[currentActiveCode] = {
+                score: currentSelectedScore,
+                comment: comment,
+                date: new Date().toISOString()
+            };
+            localStorage.setItem('teacher_local_eval_db', JSON.stringify(localDb.feedback));
+
+            const apiUrl = document.getElementById('api-url').value.trim();
+            if (apiUrl) {
+                const saveBtn = document.getElementById('btn-save');
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 클라우드 서버에 등록 중...`;
+
+                try {
+                    await fetch(apiUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            sheetName: "피드백",
+                            학생코드: currentActiveCode,
+                            피드백_점수: currentSelectedScore,
+                            피드백_내용: comment,
+                            작성자: "교사"
+                        })
+                    });
+                } catch (err) {
+                    console.error("클라우드 전송 보류, 임시 기록 보존:", err);
+                }
+
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> 도덕 평가 결과 저장 및 배포`;
+            }
+
+            showToast("💾 평가 저장 완료", `${currentActiveCode} 학생에게 등급과 코멘트가 전송되었습니다.`);
+            fetchStudentData();
+        }
+
+        function downloadCSVReport() {
+            if (studentsList.length === 0) {
+                showToast("❌ 내보내기 오류", "출력할 수 있는 데이터가 없습니다.");
+                return;
+            }
+
+            let csvStr = "\uFEFF"; // BOM 적용
+            csvStr += "학생코드(학번),분단의 문제점,통일의 필요성,통일 방안,완성된 신문 URL,제출시각,평가등급,교사 피드백\n";
+
+            studentsList.forEach(s => {
+                const code = s.학생코드 || s.A || '';
+                const fData = localDb.feedback[code] || { score: '미평가', comment: '기록 없음' };
+
+                const cleanIssue = (s.분단_문제점 || s.B || '').replace(/"/g, '""').replace(/\n/g, ' ');
+                const cleanNeed = (s.통일_필요성 || s.C || '').replace(/"/g, '""').replace(/\n/g, ' ');
+                const cleanPlan = (s.통일_방안 || s.D || '').replace(/"/g, '""').replace(/\n/g, ' ');
+                const cleanComment = (fData.comment || '').replace(/"/g, '""').replace(/\n/g, ' ');
+
+                csvStr += `"${code}","${cleanIssue}","${cleanNeed}","${cleanPlan}","${s.신문_URL || s.E || ''}","${s.제출시각 || ''}","${fData.score}","${cleanComment}"\n`;
+            });
+
+            const blob = new Blob([csvStr], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.setAttribute("href", URL.createObjectURL(blob));
+            link.setAttribute("download", `평화일보_도덕수업_최종채점표_${new Date().toLocaleDateString()}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast("📊 CSV 다운로드", "학생 답안 통합 채점표 리포트를 로컬 컴퓨터에 저장했습니다.");
+        }
+
+        function showToast(title, msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerHTML = `<strong>${title}</strong>: ${msg}`;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function getFallbackMockStudents() {
+            return [
+                {
+                    "학생코드": "30101 김평화",
+                    "분단_문제점": "남북 분단으로 인해 많은 이산가족들이 고향을 앞에 두고 만나지 못하고 있으며, 국방비 유지 비용의 누적으로 사회 전반에 큰 경제 부담과 긴장이 감돌고 있습니다.",
+                    "통일_필요성": "인권과 보편 평화 실현입니다. 경제 이익을 우선적으로 고려하기 전에, 인도적 참상을 해결하고 후대 장병들의 안전 보장을 위해 당위적으로 추진되어야 할 보편 도덕입니다.",
+                    "통일_방안": "점진적 유소년 스포츠·문화 예술 교류를 지속적으로 개최하며, 학교에서는 북한 이주민이나 다문화 친구들에게 선입견 없이 우정으로 대하는 실천 약속을 함께 지킵니다.",
+                    "신문_URL": "http://peace-news.local?code=30101",
+                    "제출시각": "2026-07-18T10:15:30.000Z"
+                }
+            ];
+        }
+    </script>
+</body>
+</html>
